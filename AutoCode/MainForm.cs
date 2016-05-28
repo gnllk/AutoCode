@@ -787,6 +787,7 @@ namespace AutoCode
             {
                 case "GB2312": return Encoding.GetEncoding("GB2312");
                 case "UTF8": return Encoding.UTF8;
+                case "UTF8(No BOM)": return new UTF8Encoding(false);
                 case "ASCII": return Encoding.ASCII;
                 default: return Encoding.Default;
             }

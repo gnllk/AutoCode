@@ -221,6 +221,7 @@
             // 
             // mainStatusStrip
             // 
+            this.mainStatusStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.mainStatusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusName,
             this.toolStripProgressBar,
@@ -252,6 +253,7 @@
             // mainMenuStrip
             // 
             this.mainMenuStrip.BackColor = System.Drawing.SystemColors.ControlDark;
+            this.mainMenuStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
             this.mainMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuItem_file,
             this.menuItem_help});
@@ -275,7 +277,7 @@
             // 
             this.menuItem_connectDatabase.Name = "menuItem_connectDatabase";
             this.menuItem_connectDatabase.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.C)));
-            this.menuItem_connectDatabase.Size = new System.Drawing.Size(204, 24);
+            this.menuItem_connectDatabase.Size = new System.Drawing.Size(210, 26);
             this.menuItem_connectDatabase.Text = "链接数据库";
             this.menuItem_connectDatabase.Click += new System.EventHandler(this.menuItem_connectDatabase_Click);
             // 
@@ -293,14 +295,14 @@
             // 
             this.menuItem_manual.Name = "menuItem_manual";
             this.menuItem_manual.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.M)));
-            this.menuItem_manual.Size = new System.Drawing.Size(194, 24);
+            this.menuItem_manual.Size = new System.Drawing.Size(200, 26);
             this.menuItem_manual.Text = "使用手册";
             // 
             // menuItem_about
             // 
             this.menuItem_about.Name = "menuItem_about";
             this.menuItem_about.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.A)));
-            this.menuItem_about.Size = new System.Drawing.Size(194, 24);
+            this.menuItem_about.Size = new System.Drawing.Size(200, 26);
             this.menuItem_about.Text = "关于";
             // 
             // mainSplitContainer
@@ -631,7 +633,8 @@
             this.cbb_Option_CodeEncode.Items.AddRange(new object[] {
             "GB2312",
             "ASCII",
-            "UTF8"});
+            "UTF8",
+            "UTF8(No BOM)"});
             this.cbb_Option_CodeEncode.Location = new System.Drawing.Point(0, 0);
             this.cbb_Option_CodeEncode.Margin = new System.Windows.Forms.Padding(4);
             this.cbb_Option_CodeEncode.Name = "cbb_Option_CodeEncode";
@@ -663,7 +666,8 @@
             this.cbb_Option_ProcedureEncode.Items.AddRange(new object[] {
             "GB2312",
             "ASCII",
-            "UTF8"});
+            "UTF8",
+            "UTF8(No BOM)"});
             this.cbb_Option_ProcedureEncode.Location = new System.Drawing.Point(0, 0);
             this.cbb_Option_ProcedureEncode.Margin = new System.Windows.Forms.Padding(4);
             this.cbb_Option_ProcedureEncode.Name = "cbb_Option_ProcedureEncode";
