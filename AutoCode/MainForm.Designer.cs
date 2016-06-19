@@ -634,7 +634,7 @@
             "GB2312",
             "ASCII",
             "UTF8",
-            "UTF8(No BOM)"});
+            "UTF8(NO BOM)"});
             this.cbb_Option_CodeEncode.Location = new System.Drawing.Point(0, 0);
             this.cbb_Option_CodeEncode.Margin = new System.Windows.Forms.Padding(4);
             this.cbb_Option_CodeEncode.Name = "cbb_Option_CodeEncode";
@@ -667,7 +667,7 @@
             "GB2312",
             "ASCII",
             "UTF8",
-            "UTF8(No BOM)"});
+            "UTF8(NO BOM)"});
             this.cbb_Option_ProcedureEncode.Location = new System.Drawing.Point(0, 0);
             this.cbb_Option_ProcedureEncode.Margin = new System.Windows.Forms.Padding(4);
             this.cbb_Option_ProcedureEncode.Name = "cbb_Option_ProcedureEncode";

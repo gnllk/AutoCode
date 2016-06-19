@@ -7,9 +7,11 @@ using AutoCode.Entity;
 
 namespace AutoCode.SqlCreator
 {
-    public class MsSqlCreator : SqlCreatorBase
+    public class MsSqlCreator : ISqlCreator, ISqlBatchCreator
     {
-        public override void DropProcesure(StreamWriter writer, string dbName, string procedureName)
+        #region common
+
+        public void DropProcesure(StreamWriter writer, string dbName, string procedureName)
         {
             writer.Write("--删除存储过程 {0}\r\n", procedureName);
             writer.Write("IF  EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[{0}]') AND type in (N'P', N'PC'))\r\n"
@@ -17,7 +19,7 @@ namespace AutoCode.SqlCreator
                 + "GO\r\n", procedureName);
         }
 
-        public override void CreateGetProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        public void CreateGetProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
         {
             writer.Write("--创建存储过程 {0}\r\n", procedureName);
             writer.WriteLine("CREATE PROCEDURE {0}", procedureName);
@@ -60,7 +62,7 @@ namespace AutoCode.SqlCreator
             writer.WriteLine("GO");
         }
 
-        public override void CreateAddProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        public void CreateAddProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
         {
             List<ColumnNameEntity> addList = columns.FindAll(e => e.IsIdentity == false);
             if (null != addList && addList.Count > 0)
@@ -108,7 +110,7 @@ namespace AutoCode.SqlCreator
             }
         }
 
-        public override void CreateEditProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        public void CreateEditProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
         {
             List<ColumnNameEntity> editList = columns.FindAll(e => e.IsIdentity == false || (e.IsIdentity && e.IsPrimary));
             if (null != editList && editList.Count > 0)
@@ -158,7 +160,7 @@ namespace AutoCode.SqlCreator
             }
         }
 
-        public override void CreateDeleteProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        public void CreateDeleteProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
         {
             writer.Write("--创建存储过程 {0}\r\n", procedureName);
             writer.WriteLine("CREATE PROCEDURE {0}", procedureName);
@@ -205,7 +207,7 @@ namespace AutoCode.SqlCreator
             writer.WriteLine("GO");
         }
 
-        public override void CreateGetListProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        public void CreateGetListProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
         {
             writer.Write("--创建存储过程 {0}\r\n", procedureName);
             writer.WriteLine("CREATE PROCEDURE {0}", procedureName);
@@ -219,5 +221,26 @@ namespace AutoCode.SqlCreator
             writer.WriteLine("END");
             writer.WriteLine("GO");
         }
+
+        #endregion common
+
+        #region batch
+
+        public void CreateBatchAddProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void CreateBatchEditProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void CreateBatchDeleteProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion batch
     }
 }

@@ -13,11 +13,14 @@ using System.Data.Common;
 using AutoCode.Entity;
 using AutoCode.Utils;
 using AutoCode.SqlCreator;
+using AutoCode.CodeCreator.Factory;
 
 namespace AutoCode
 {
     public partial class MainForm : Form
     {
+        #region 窗口操作
+
         public MainForm()
         {
             InitializeComponent();
@@ -144,7 +147,9 @@ namespace AutoCode
             }
         }
 
-        #region 按键事件
+        #endregion 窗口操作
+
+        #region 按钮事件
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -357,22 +362,17 @@ namespace AutoCode
             try
             {
                 if (e != null) IsOneKey = false;
-                string prefix = ConfigManager.Config.EntityPrefix;
-                string suffix = ConfigManager.Config.EntitySuffix;
-                string subNSP = ConfigManager.Config.EntitySubNamespace;
-                if (string.IsNullOrEmpty(ConfigManager.Config.Namespace))
+
+                Config config = ConfigManager.Config;
+                if (string.IsNullOrEmpty(config.Namespace))
                 {
                     MessageBox.Show("请填写命名空间");
                     return;
                 }
-                if (string.IsNullOrEmpty(ConfigManager.Config.SaveFilePath))
+                if (string.IsNullOrEmpty(config.SaveFilePath))
                 {
                     MessageBox.Show("请选择文件保存路径");
                     return;
-                }
-                if (subNSP.Length > 0 && subNSP.First() == '.')
-                {
-                    subNSP = subNSP.Substring(1);
                 }
                 if (mainChckListTable.CheckedItems.Count > 0)
                 {
@@ -380,11 +380,8 @@ namespace AutoCode
                     {
                         foreach (var item in mainChckListTable.CheckedItems)
                         {
-                            string tableName = item.ToString();
-                            string fileSuffix = suffix.Contains(':') ? suffix.Substring(0, suffix.IndexOf(':')).Trim() : suffix;
-                            string fileName = Path.Combine(ConfigManager.Config.SaveFilePath, "Entity", string.Format("{0}.cs", GetObjectName(tableName, prefix, fileSuffix)));
-                            string nameSp = string.IsNullOrEmpty(subNSP) ? ConfigManager.Config.Namespace : string.Format("{0}.{1}", ConfigManager.Config.Namespace, subNSP);
-                            GenerateEntity(ConfigManager.Config, fileName, nameSp, tableName, prefix, suffix);
+                            var names = GetEntityNames(config, item.ToString());
+                            GenerateEntity(ConfigManager.Config, names);
                         }
                     }
                     else
@@ -399,15 +396,11 @@ namespace AutoCode
                                 for (int i = 0; i < count; i++)
                                 {
                                     string tableName = mainChckListTable.CheckedItems[i].ToString();
-                                    string fileSuffix = suffix.Contains(':') ? suffix.Substring(0, suffix.IndexOf(':')).Trim() : suffix;
-                                    string entityName = GetObjectName(tableName, prefix, fileSuffix);
-                                    string fileName = Path.Combine(ConfigManager.Config.SaveFilePath, "Entity", string.Format("{0}.cs", entityName));
-                                    string nameSp = string.IsNullOrEmpty(subNSP) ? ConfigManager.Config.Namespace : string.Format("{0}.{1}", ConfigManager.Config.Namespace, subNSP);
-                                    //控制进度和消息
+                                    var names = GetEntityNames(config, tableName);
                                     SetProgressBarByThread((int)(rate * (i + 1)));
-                                    SetStatusMessageByThread(string.Format("正在生成实体{0}...", entityName));
+                                    SetStatusMessageByThread(string.Format("正在生成实体{0}...", names.EntityClassName));
                                     Thread.Sleep(SttSleepTime);
-                                    GenerateEntity(ConfigManager.Config, fileName, nameSp, tableName, prefix, suffix);
+                                    GenerateEntity(ConfigManager.Config, names);
                                 }
                                 SetProgressBarByThread(100);
                                 SetStatusMessageByThread(string.Format("生成实体完成"));
@@ -439,23 +432,19 @@ namespace AutoCode
             try
             {
                 if (e != null) IsOneKey = false;
-                string prefix = ConfigManager.Config.InterfacePrefix;
-                string suffix = ConfigManager.Config.InterfaceSuffix;
-                string subNSP = ConfigManager.Config.InterfaceSubNamespace;
-                if (string.IsNullOrEmpty(ConfigManager.Config.Namespace))
+
+                var config = ConfigManager.Config;
+                if (string.IsNullOrEmpty(config.Namespace))
                 {
                     MessageBox.Show("请填写命名空间");
                     return;
                 }
-                if (string.IsNullOrEmpty(ConfigManager.Config.SaveFilePath))
+                if (string.IsNullOrEmpty(config.SaveFilePath))
                 {
                     MessageBox.Show("请选择文件保存路径");
                     return;
                 }
-                if (subNSP.Length > 0 && subNSP.First() == '.')
-                {
-                    subNSP = subNSP.Substring(1);
-                }
+
                 if (mainChckListTable.CheckedItems.Count > 0)
                 {
                     if (this.IsOneKey)
@@ -463,10 +452,8 @@ namespace AutoCode
                         foreach (var item in mainChckListTable.CheckedItems)
                         {
                             string tableName = item.ToString();
-                            string fileSuffix = suffix.Contains(':') ? suffix.Substring(0, suffix.IndexOf(':')).Trim() : suffix;
-                            string fileName = Path.Combine(ConfigManager.Config.SaveFilePath, "Interface", string.Format("{0}.cs", GetObjectName(tableName, prefix, fileSuffix)));
-                            string nameSp = string.IsNullOrEmpty(subNSP) ? ConfigManager.Config.Namespace : string.Format("{0}.{1}", ConfigManager.Config.Namespace, subNSP);
-                            GenerateInterface(ConfigManager.Config, fileName, nameSp, tableName, prefix, suffix);
+                            var names = GetInterfaceNames(config, tableName);
+                            GenerateInterface(config, names);
                         }
                     }
                     else
@@ -481,15 +468,11 @@ namespace AutoCode
                                 for (int i = 0; i < count; i++)
                                 {
                                     string tableName = mainChckListTable.CheckedItems[i].ToString();
-                                    string fileSuffix = suffix.Contains(':') ? suffix.Substring(0, suffix.IndexOf(':')).Trim() : suffix;
-                                    string interfaseName = GetObjectName(tableName, prefix, fileSuffix);
-                                    string fileName = Path.Combine(ConfigManager.Config.SaveFilePath, "Interface", string.Format("{0}.cs", interfaseName));
-                                    string nameSp = string.IsNullOrEmpty(subNSP) ? ConfigManager.Config.Namespace : string.Format("{0}.{1}", ConfigManager.Config.Namespace, subNSP);
-                                    //控制进度和消息
+                                    var names = GetInterfaceNames(config, tableName);
                                     SetProgressBarByThread((int)(rate * (i + 1)));
-                                    SetStatusMessageByThread(string.Format("正在生成接口{0}...", interfaseName));
+                                    SetStatusMessageByThread(string.Format("正在生成接口{0}...", names.InterfaceClassName));
                                     Thread.Sleep(SttSleepTime);
-                                    GenerateInterface(ConfigManager.Config, fileName, nameSp, tableName, prefix, suffix);
+                                    GenerateInterface(config, names);
                                 }
                                 SetProgressBarByThread(100);
                                 SetStatusMessageByThread(string.Format("生成接口完成"));
@@ -521,9 +504,7 @@ namespace AutoCode
             try
             {
                 if (e != null) IsOneKey = false;
-                string prefix = ConfigManager.Config.DALPrefix;
-                string suffix = ConfigManager.Config.DALSuffix;
-                string subNSP = ConfigManager.Config.DALSubNamespace;
+                var config = ConfigManager.Config;
                 if (string.IsNullOrEmpty(ConfigManager.Config.Namespace))
                 {
                     MessageBox.Show("请填写命名空间");
@@ -534,10 +515,7 @@ namespace AutoCode
                     MessageBox.Show("请选择文件保存路径");
                     return;
                 }
-                if (subNSP.Length > 0 && subNSP.First() == '.')
-                {
-                    subNSP = subNSP.Substring(1);
-                }
+
                 if (mainChckListTable.CheckedItems.Count > 0)
                 {
                     if (this.IsOneKey)
@@ -545,10 +523,8 @@ namespace AutoCode
                         foreach (var item in mainChckListTable.CheckedItems)
                         {
                             string tableName = item.ToString();
-                            string fileSuffix = suffix.Contains(':') ? suffix.Substring(0, suffix.IndexOf(':')).Trim() : suffix;
-                            string fileName = Path.Combine(ConfigManager.Config.SaveFilePath, "DAL", string.Format("{0}.cs", GetObjectName(tableName, prefix, fileSuffix)));
-                            string nameSp = string.IsNullOrEmpty(subNSP) ? ConfigManager.Config.Namespace : string.Format("{0}.{1}", ConfigManager.Config.Namespace, subNSP);
-                            GenerateDAL(ConfigManager.Config, fileName, nameSp, tableName, prefix, suffix);
+                            var names = GetDALNames(config, tableName);
+                            GenerateDAL(config, names);
                         }
                     }
                     else
@@ -563,15 +539,11 @@ namespace AutoCode
                                 for (int i = 0; i < count; i++)
                                 {
                                     string tableName = mainChckListTable.CheckedItems[i].ToString();
-                                    string fileSuffix = suffix.Contains(':') ? suffix.Substring(0, suffix.IndexOf(':')).Trim() : suffix;
-                                    string DALName = GetObjectName(tableName, prefix, fileSuffix);
-                                    string fileName = Path.Combine(ConfigManager.Config.SaveFilePath, "DAL", string.Format("{0}.cs", DALName));
-                                    string nameSp = string.IsNullOrEmpty(subNSP) ? ConfigManager.Config.Namespace : string.Format("{0}.{1}", ConfigManager.Config.Namespace, subNSP);
-                                    //控制进度和消息
+                                    var names = GetDALNames(config, tableName);
                                     SetProgressBarByThread((int)(rate * (i + 1)));
-                                    SetStatusMessageByThread(string.Format("正在生成DAL{0}...", DALName));
+                                    SetStatusMessageByThread(string.Format("正在生成DAL{0}...", names.DALClassName));
                                     Thread.Sleep(SttSleepTime);
-                                    GenerateDAL(ConfigManager.Config, fileName, nameSp, tableName, prefix, suffix);
+                                    GenerateDAL(config, names);
                                 }
                                 SetProgressBarByThread(100);
                                 SetStatusMessageByThread(string.Format("生成DAL完成"));
@@ -603,9 +575,7 @@ namespace AutoCode
             try
             {
                 if (e != null) IsOneKey = false;
-                string prefix = ConfigManager.Config.BLLPrefix;
-                string suffix = ConfigManager.Config.BLLSuffix;
-                string subNSP = ConfigManager.Config.BLLSubNamespace;
+                var config = ConfigManager.Config;
                 if (string.IsNullOrEmpty(ConfigManager.Config.Namespace))
                 {
                     MessageBox.Show("请填写命名空间");
@@ -616,10 +586,7 @@ namespace AutoCode
                     MessageBox.Show("请选择文件保存路径");
                     return;
                 }
-                if (subNSP.Length > 0 && subNSP.First() == '.')
-                {
-                    subNSP = subNSP.Substring(1);
-                }
+
                 if (mainChckListTable.CheckedItems.Count > 0)
                 {
                     if (this.IsOneKey)
@@ -627,10 +594,8 @@ namespace AutoCode
                         foreach (var item in mainChckListTable.CheckedItems)
                         {
                             string tableName = item.ToString();
-                            string fileSuffix = suffix.Contains(':') ? suffix.Substring(0, suffix.IndexOf(':')).Trim() : suffix;
-                            string fileName = Path.Combine(ConfigManager.Config.SaveFilePath, "BLL", string.Format("{0}.cs", GetObjectName(tableName, prefix, fileSuffix)));
-                            string nameSp = string.IsNullOrEmpty(subNSP) ? ConfigManager.Config.Namespace : string.Format("{0}.{1}", ConfigManager.Config.Namespace, subNSP);
-                            GenerateBLL(ConfigManager.Config, fileName, nameSp, tableName, prefix, suffix);
+                            var names = GetBLLNames(config, tableName);
+                            GenerateBLL(config, names);
                         }
                     }
                     else
@@ -645,15 +610,11 @@ namespace AutoCode
                                 for (int i = 0; i < count; i++)
                                 {
                                     string tableName = mainChckListTable.CheckedItems[i].ToString();
-                                    string fileSuffix = suffix.Contains(':') ? suffix.Substring(0, suffix.IndexOf(':')).Trim() : suffix;
-                                    string BLLName = GetObjectName(tableName, prefix, fileSuffix);
-                                    string fileName = Path.Combine(ConfigManager.Config.SaveFilePath, "BLL", string.Format("{0}.cs", BLLName));
-                                    string nameSp = string.IsNullOrEmpty(subNSP) ? ConfigManager.Config.Namespace : string.Format("{0}.{1}", ConfigManager.Config.Namespace, subNSP);
-                                    //控制进度和消息
+                                    var names = GetBLLNames(config, tableName);
                                     SetProgressBarByThread((int)(rate * (i + 1)));
-                                    SetStatusMessageByThread(string.Format("正在生成BLL{0}...", BLLName));
+                                    SetStatusMessageByThread(string.Format("正在生成BLL{0}...", names.BLLClassName));
                                     Thread.Sleep(SttSleepTime);
-                                    GenerateBLL(ConfigManager.Config, fileName, nameSp, tableName, prefix, suffix);
+                                    GenerateBLL(config, names);
                                 }
                                 SetProgressBarByThread(100);
                                 SetStatusMessageByThread(string.Format("生成BLL完成"));
@@ -765,9 +726,9 @@ namespace AutoCode
             }
         }
 
-        #endregion 按键事件
+        #endregion 按钮事件
 
-        #region 辅助函数
+        #region 文本编码
 
         private Encoding GetCodeEncoding(Config config)
         {
@@ -787,43 +748,208 @@ namespace AutoCode
             {
                 case "GB2312": return Encoding.GetEncoding("GB2312");
                 case "UTF8": return Encoding.UTF8;
-                case "UTF8(No BOM)": return new UTF8Encoding(false);
+                case "UTF8(NO BOM)": return new UTF8Encoding(false);
                 case "ASCII": return Encoding.ASCII;
                 default: return Encoding.Default;
             }
         }
 
-        private string FirstLetterCase(string str)
+        #endregion 文本编码
+
+        #region 生成对象
+
+        private void GenerateEntity(Config config, GenNames names)
         {
-            if (rbtnFirstLetterCaseLower.Checked)
+            string fileName = BuildPath(config, names, CodeGenType.Entity, CodeLanType.CSharp);
+            CreateDirIfNotExist(fileName);
+            using (FileStream fs = new FileStream(fileName, FileMode.Create))
             {
-                return Tools.FirstLetterToLower(str);
-            }
-            else if (rbtnFirstLetterCaseUpper.Checked)
-            {
-                return Tools.FirstLetterToUpper(str);
-            }
-            else
-            {
-                return str;
+                StreamWriter writer = new StreamWriter(fs, GetCodeEncoding(config));
+
+                var creator = new EntityCreatorFactory(writer, names, config, GetTableDataRow(names.TableName)).GetCodeCreator(CodeLanType.CSharp);
+                creator.Generate();
             }
         }
 
-        private string GetObjectName(string tableName, string prefix, string suffix)
+        private void GenerateInterface(Config config, GenNames names)
         {
-            Regex reg = new Regex("[a-z0-9A-Z]+", RegexOptions.RightToLeft);
+            string fileName = BuildPath(config, names, CodeGenType.Interface, CodeLanType.CSharp);
+            CreateDirIfNotExist(fileName);
+            using (FileStream fs = new FileStream(fileName, FileMode.Create))
+            {
+                StreamWriter writer = new StreamWriter(fs, GetCodeEncoding(config));
+
+                var creator = new InterfaceCreatorFactory(writer, names, config, GetTableDataRow(names.TableName)).GetCodeCreator(CodeLanType.CSharp);
+                creator.Generate();
+            }
+        }
+
+        private void GenerateDAL(Config config, GenNames names)
+        {
+            string fileName = BuildPath(config, names, CodeGenType.DAL, CodeLanType.CSharp);
+            CreateDirIfNotExist(fileName);
+            using (FileStream fs = new FileStream(fileName, FileMode.Create))
+            {
+                StreamWriter writer = new StreamWriter(fs, GetCodeEncoding(config));
+
+                var creator = new DALCreatorFactory(writer, names, config, GetTableDataRow(names.TableName)).GetCodeCreator(CodeLanType.CSharp);
+                creator.Generate();
+            }
+        }
+
+        private void GenerateBLL(Config config, GenNames names)
+        {
+            string fileName = BuildPath(config, names, CodeGenType.BLL, CodeLanType.CSharp);
+            CreateDirIfNotExist(fileName);
+            using (FileStream fs = new FileStream(fileName, FileMode.Create))
+            {
+                StreamWriter writer = new StreamWriter(fs, GetCodeEncoding(config));
+
+                var creator = new BLLCreatorFactory(writer, names, config, GetTableDataRow(names.TableName)).GetCodeCreator(CodeLanType.CSharp);
+                creator.Generate();
+            }
+        }
+
+        private void GenerateProcedure(Config config, StreamWriter writer, string tableName, string prefix, string suffix)
+        {
+            if (!string.IsNullOrEmpty(tableName))
+            {
+                //table columns
+                string conStr = ConfigManager.DbFactory.CreateConnStr(ConfigManager.Config.DbServerName,
+                ConfigManager.Config.DbName, ConfigManager.Config.DbLoginName, ConfigManager.Config.DbLoginPwd);
+                List<ColumnNameEntity> list = null;
+                using (DbConnection conn = ConfigManager.DbFactory.GetConnection(conStr))
+                {
+                    DbCommand cmd = ConfigManager.DbFactory.GetCommand(conn,
+                        ConfigManager.SpecificSql.GetColumnNameSql(ConfigManager.Config.DbName, tableName));
+                    list = DbHelper.GetList<ColumnNameEntity>(cmd);
+                }
+                if (null != list && list.Count > 0)
+                {
+                    string procedure = tableName;
+                    if (!string.IsNullOrEmpty(prefix)) procedure = prefix + "_" + procedure;
+                    if (!string.IsNullOrEmpty(suffix)) procedure = procedure + "_" + suffix;
+                    ISqlCreator creator = SqlCreatorFactory.GetSqlCreator(config.DbType);
+                    //drop
+                    creator.DropProcesure(writer, config.DbName, procedure + "_Get");
+                    writer.WriteLine();
+                    creator.DropProcesure(writer, config.DbName, procedure + "_Add");
+                    writer.WriteLine();
+                    creator.DropProcesure(writer, config.DbName, procedure + "_Edit");
+                    writer.WriteLine();
+                    creator.DropProcesure(writer, config.DbName, procedure + "_Delete");
+                    writer.WriteLine();
+                    creator.DropProcesure(writer, config.DbName, procedure + "_GetList");
+                    writer.WriteLine();
+                    //create
+                    creator.CreateGetProcedure(writer, list, config.DbName, tableName, procedure + "_Get");
+                    writer.WriteLine();
+                    creator.CreateAddProcedure(writer, list, config.DbName, tableName, procedure + "_Add");
+                    writer.WriteLine();
+                    creator.CreateEditProcedure(writer, list, config.DbName, tableName, procedure + "_Edit");
+                    writer.WriteLine();
+                    creator.CreateDeleteProcedure(writer, list, config.DbName, tableName, procedure + "_Delete");
+                    writer.WriteLine();
+                    creator.CreateGetListProcedure(writer, list, config.DbName, tableName, procedure + "_GetList");
+                    writer.WriteLine();
+                }
+            }
+        }
+
+        #endregion 生成对象
+
+        #region 辅助函数
+
+        private GenNames GetEntityNames(Config config, string tableName)
+        {
+            var names = new GenNames();
+            string prefix = ConfigManager.Config.EntityPrefix;
+            string suffix = ConfigManager.Config.EntitySuffix;
+            string nameSP = ConfigManager.Config.Namespace;
+            string subNSP = ConfigManager.Config.EntitySubNamespace.ReplaceStart(",", string.Empty);
+
+            string classFullName = GetObjectName(tableName, prefix, suffix);
+
+            names.EntityClassName = GetObjectName(classFullName, string.Empty, string.Empty, RegexOptions.None);
+            names.EntityInheritanceName = classFullName.ReplaceStart(names.EntityClassName, string.Empty);
+            names.EntityNameSpace = string.IsNullOrWhiteSpace(subNSP) ? nameSP : string.Format("{0}.{1}", nameSP, subNSP);
+
+            names.TableName = tableName;
+            names.Prefix = prefix;
+            names.Suffix = suffix;
+
+            return names;
+        }
+
+        private GenNames GetInterfaceNames(Config config, string tableName)
+        {
+            GenNames names = GetEntityNames(config, tableName);
+            string prefix = ConfigManager.Config.InterfacePrefix;
+            string suffix = ConfigManager.Config.InterfaceSuffix;
+            string nameSP = ConfigManager.Config.Namespace;
+            string subNSP = ConfigManager.Config.InterfaceSubNamespace.ReplaceStart(",", string.Empty);
+
+            string classFullName = GetObjectName(tableName, prefix, suffix);
+
+            names.InterfaceClassName = GetObjectName(classFullName, string.Empty, string.Empty, RegexOptions.None);
+            names.InterfaceInheritanceName = classFullName.ReplaceStart(names.InterfaceClassName, string.Empty);
+            names.InterfaceNameSpace = string.IsNullOrWhiteSpace(subNSP) ? nameSP : string.Format("{0}.{1}", nameSP, subNSP);
+
+            names.TableName = tableName;
+            names.Prefix = prefix;
+            names.Suffix = suffix;
+
+            return names;
+        }
+
+        private GenNames GetDALNames(Config config, string tableName)
+        {
+            GenNames names = GetInterfaceNames(config, tableName);
+            string prefix = ConfigManager.Config.DALPrefix;
+            string suffix = ConfigManager.Config.DALSuffix;
+            string nameSP = ConfigManager.Config.Namespace;
+            string subNSP = ConfigManager.Config.DALSubNamespace.ReplaceStart(",", string.Empty);
+
+            string classFullName = GetObjectName(tableName, prefix, suffix);
+
+            names.DALClassName = GetObjectName(classFullName, string.Empty, string.Empty, RegexOptions.None);
+            names.DALInheritanceName = classFullName.ReplaceStart(names.DALClassName, string.Empty);
+            names.DALNameSpace = string.IsNullOrWhiteSpace(subNSP) ? nameSP : string.Format("{0}.{1}", nameSP, subNSP);
+
+            names.TableName = tableName;
+            names.Prefix = prefix;
+            names.Suffix = suffix;
+
+            return names;
+        }
+
+        private GenNames GetBLLNames(Config config, string tableName)
+        {
+            GenNames names = GetDALNames(config, tableName);
+            string prefix = ConfigManager.Config.BLLPrefix;
+            string suffix = ConfigManager.Config.BLLSuffix;
+            string nameSP = ConfigManager.Config.Namespace;
+            string subNSP = ConfigManager.Config.BLLSubNamespace.ReplaceStart(",", string.Empty);
+
+            string classFullName = GetObjectName(tableName, prefix, suffix);
+
+            names.BLLClassName = GetObjectName(classFullName, string.Empty, string.Empty, RegexOptions.None);
+            names.BLLInheritanceName = classFullName.ReplaceStart(names.BLLClassName, string.Empty);
+            names.BLLNameSpace = string.IsNullOrWhiteSpace(subNSP) ? nameSP : string.Format("{0}.{1}", nameSP, subNSP);
+
+            names.TableName = tableName;
+            names.Prefix = prefix;
+            names.Suffix = suffix;
+
+            return names;
+        }
+
+        private string GetObjectName(string tableName, string prefix, string suffix, RegexOptions option = RegexOptions.RightToLeft)
+        {
+            Regex reg = new Regex("[a-z0-9A-Z]+", option);
             Match match = reg.Match(tableName);
             return match.Success ? (prefix + FirstLetterCase(match.Value) + suffix)
                 : (prefix + FirstLetterCase(tableName) + suffix);
-        }
-
-        private TableNameEntity GetTableDataRow(string tableName)
-        {
-            if (null != ConfigManager.DatabaseTable && ConfigManager.DatabaseTable.Count > 0)
-            {
-                return ConfigManager.DatabaseTable.Find(e => e.Name == tableName);
-            }
-            return null;
         }
 
         private string GetTableDescription(string tableName, string _default)
@@ -834,22 +960,6 @@ namespace AutoCode
                 return string.IsNullOrEmpty(row.Description) ? _default : row.Description;
             }
             return _default;
-        }
-
-        private string InheritInterface(string className, string _interface)
-        {
-            if (!string.IsNullOrEmpty(className) && !string.IsNullOrEmpty(_interface))
-            {
-                if (className.Contains(':'))
-                {
-                    return className + ", " + _interface;
-                }
-                else
-                {
-                    return className + " : " + _interface;
-                }
-            }
-            return className;
         }
 
         private string AddFixPerLine(string str, string prefix, string suffix)
@@ -876,6 +986,15 @@ namespace AutoCode
             return string.Empty;
         }
 
+        private TableNameEntity GetTableDataRow(string tableName)
+        {
+            if (null != ConfigManager.DatabaseTable && ConfigManager.DatabaseTable.Count > 0)
+            {
+                return ConfigManager.DatabaseTable.Find(e => e.Name == tableName);
+            }
+            return null;
+        }
+
         private List<ColumnNameEntity> ConvertToColumnNameEntityListFrom(DataTable columnTable)
         {
             List<ColumnNameEntity> list = new List<ColumnNameEntity>();
@@ -898,680 +1017,53 @@ namespace AutoCode
             return list;
         }
 
-        private void GenerateEntity(Config config, string fileName, string nameSpace, string tableName, string prefix, string suffix)
+        private static string BuildPath(Config config, GenNames names, CodeGenType genType, CodeLanType lanType)
         {
-            string conStr = ConfigManager.DbFactory.CreateConnStr(ConfigManager.Config.DbServerName,
-                ConfigManager.Config.DbName, ConfigManager.Config.DbLoginName, ConfigManager.Config.DbLoginPwd);
-            List<ColumnNameEntity> list = null;
-            using (DbConnection conn = ConfigManager.DbFactory.GetConnection(conStr))
-            {
-                DbCommand cmd = ConfigManager.DbFactory.GetCommand(conn,
-                    ConfigManager.SpecificSql.GetColumnNameSql(ConfigManager.Config.DbName, tableName));
-                list = DbHelper.GetList<ColumnNameEntity>(cmd);
-            }
-            if (null != list && list.Count > 0)
-            {
-                string filePath = Path.GetDirectoryName(fileName);
-                if (!Directory.Exists(filePath)) Directory.CreateDirectory(filePath);
-                using (FileStream fs = new FileStream(fileName, FileMode.Create))
-                {
-                    StreamWriter writer = new StreamWriter(fs, GetCodeEncoding(config));
-                    writer.WriteLine("using System;");
-                    writer.WriteLine("using System.Collections.Generic;");
-                    writer.WriteLine("using System.Linq;");
-                    writer.WriteLine("using System.Text;");
-                    writer.WriteLine();
-                    writer.WriteLine("namespace {0}", nameSpace);
-                    writer.WriteLine("{");
-                    //start of class
-                    writer.WriteLine("\t/// <summary>");
-                    writer.WriteLine("{0}", AddFixPerLine((GetTableDescription(tableName, "其他") + "实体"), "\t/// ", string.Empty));
-                    writer.WriteLine("\t/// </summary>");
-                    writer.WriteLine("\tpublic class {0}", GetObjectName(tableName, prefix, suffix));
-                    writer.WriteLine("\t{");
-                    writer.WriteLine("\t\t#region 公共属性");
-                    writer.WriteLine();
-                    foreach (ColumnNameEntity item in list)
-                    {
-                        string attr = string.Format("\t\tpublic {0} {1} ", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                        writer.WriteLine("\t\t/// <summary>");
-                        writer.WriteLine("\t\t/// {0}", item.Description);
-                        writer.WriteLine("\t\t/// </summary>");
-                        writer.WriteLine(attr + "{ get; set; }");
-                        writer.WriteLine();
-                    }
-                    writer.WriteLine("\t\t#endregion");
-                    writer.WriteLine("\t}");
-                    //end of class
-                    writer.WriteLine("}");
-                    writer.Close();
-                }
-            }
+            return Path.Combine(config.SaveFilePath,
+                GetSubPath(genType),
+                string.Format("{0}.{1}",
+                    GetClassName(names, genType),
+                    GetFileExtentionName(lanType)));
         }
 
-        private void GenerateInterface(Config config, string fileName, string nameSpace, string tableName, string prefix, string suffix)
+        private static string GetSubPath(CodeGenType type)
         {
-            string conStr = ConfigManager.DbFactory.CreateConnStr(ConfigManager.Config.DbServerName,
-                ConfigManager.Config.DbName, ConfigManager.Config.DbLoginName, ConfigManager.Config.DbLoginPwd);
-            List<ColumnNameEntity> list = null;
-            using (DbConnection conn = ConfigManager.DbFactory.GetConnection(conStr))
+            switch (type)
             {
-                DbCommand cmd = ConfigManager.DbFactory.GetCommand(conn,
-                    ConfigManager.SpecificSql.GetColumnNameSql(ConfigManager.Config.DbName, tableName));
-                list = DbHelper.GetList<ColumnNameEntity>(cmd);
+                case CodeGenType.Entity: return "Entity";
+                case CodeGenType.Interface: return "Interface";
+                case CodeGenType.DAL: return "DAL";
+                case CodeGenType.BLL: return "BLL";
             }
-            if (null != list && list.Count > 0)
-            {
-                string filePath = Path.GetDirectoryName(fileName);
-                if (!Directory.Exists(filePath)) Directory.CreateDirectory(filePath);
-                using (FileStream fs = new FileStream(fileName, FileMode.Create))
-                {
-                    StreamWriter writer = new StreamWriter(fs, GetCodeEncoding(config));
-                    writer.WriteLine("using System;");
-                    writer.WriteLine("using System.Collections.Generic;");
-                    writer.WriteLine("using System.Linq;");
-                    writer.WriteLine("using System.Text;");
-                    //实体命名空间
-                    string entitySubNSP = config.EntitySubNamespace;
-                    if (entitySubNSP.Length > 0 && entitySubNSP.First() == '.') entitySubNSP = entitySubNSP.Substring(1);
-                    string enttiyNameSp = string.IsNullOrEmpty(entitySubNSP) ? config.Namespace : string.Format("{0}.{1}", config.Namespace, entitySubNSP);
-                    writer.WriteLine("using {0};", enttiyNameSp);
-                    writer.WriteLine();
-
-                    writer.WriteLine("namespace {0}", nameSpace);
-                    writer.WriteLine("{");
-                    //start of class
-                    writer.WriteLine("\t/// <summary>");
-                    writer.WriteLine("{0}", AddFixPerLine((GetTableDescription(tableName, "其他") + "接口"), "\t/// ", string.Empty));
-                    writer.WriteLine("\t/// </summary>");
-                    writer.WriteLine("\tpublic interface {0}", GetObjectName(tableName, prefix, suffix));
-                    writer.WriteLine("\t{");
-                    writer.WriteLine("\t\t#region 接口");
-                    writer.WriteLine();
-
-                    string entityClass = GetObjectName(tableName, config.EntityPrefix, config.EntitySuffix);
-                    //Get
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 获取一个实体数据");
-                    writer.WriteLine("\t\t/// </summary>");
-                    List<ColumnNameEntity> primaryColumn = list.FindAll(e => e.IsPrimary);
-                    if (null != primaryColumn && primaryColumn.Count > 0)
-                    {
-                        string args = string.Empty;
-                        int count = primaryColumn.Count;
-                        int mcount = count - 1;
-                        for (int i = 0; i < count; i++)
-                        {
-                            var item = primaryColumn[i];
-                            writer.WriteLine("\t\t/// <param name=\"{0}\">{1}</param>", item.Name, item.Description);
-                            if (i < mcount)
-                                args += string.Format("{0} {1}, ", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                            else
-                                args += string.Format("{0} {1}", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                        }
-                        writer.WriteLine("\t\t/// <returns>返回实体，否则返回NULL</returns>");
-                        writer.WriteLine("\t\t{0} Get({1});", entityClass, args);
-                    }
-                    else
-                    {
-                        writer.WriteLine("\t\t/// <param name=\"{0}\">{1}</param>", "id", "ID");//default
-                        writer.WriteLine("\t\t/// <returns>返回实体，否则返回NULL</returns>");
-                        writer.WriteLine("\t\t{0} Get({1});", entityClass, "int id");
-                    }
-                    writer.WriteLine();
-                    //Delete
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 删除一个实体数据");
-                    writer.WriteLine("\t\t/// </summary>");
-                    if (null != primaryColumn && primaryColumn.Count > 0)
-                    {
-                        string args = string.Empty;
-                        int count = primaryColumn.Count;
-                        int mcount = count - 1;
-                        for (int i = 0; i < count; i++)
-                        {
-                            var item = primaryColumn[i];
-                            writer.WriteLine("\t\t/// <param name=\"{0}\">{1}</param>", item.Name, item.Description);
-                            if (i < mcount)
-                                args += string.Format("{0} {1}, ", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                            else
-                                args += string.Format("{0} {1}", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                        }
-                        writer.WriteLine("\t\t/// <returns>0失败，1成功</returns>");
-                        writer.WriteLine("\t\tint Delete({0});", args);
-                    }
-                    else
-                    {
-                        writer.WriteLine("\t\t/// <param name=\"{0}\">{1}</param>", "id", "ID");
-                        writer.WriteLine("\t\t/// <returns>0失败，1成功</returns>");
-                        writer.WriteLine("\t\tint Delete({0});", "int id");
-                    }
-
-                    writer.WriteLine();
-                    //Edit
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 编辑一个实体数据");
-                    writer.WriteLine("\t\t/// </summary>");
-                    writer.WriteLine("\t\t/// <param name=\"item\">实体</param>");
-                    writer.WriteLine("\t\t/// <returns>0失败，1成功</returns>");
-                    writer.WriteLine("\t\tint Edit({0} item);", entityClass);
-                    writer.WriteLine();
-                    //Add
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 增加一个实体数据，并更新实体的ID为新增ID");
-                    writer.WriteLine("\t\t/// </summary>");
-                    writer.WriteLine("\t\t/// <param name=\"item\">实体</param>");
-                    writer.WriteLine("\t\t/// <returns>0失败，1成功，2已存在</returns>");
-                    writer.WriteLine("\t\tint Add(ref {0} item);", entityClass);
-                    writer.WriteLine();
-                    //GetList
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 获取数据列表");
-                    writer.WriteLine("\t\t/// </summary>");
-                    writer.WriteLine("\t\t/// <returns>返回非NULL列表</returns>");
-                    writer.WriteLine("\t\tList<{0}> GetList();", entityClass);
-                    writer.WriteLine();
-
-                    writer.WriteLine("\t\t#endregion");
-                    writer.WriteLine("\t}");
-                    //end of class
-                    writer.WriteLine("}");
-                    writer.Close();
-                }
-            }
+            throw new Exception(string.Format("Not support this generator type {0}", type)); ;
         }
 
-        private void GenerateDAL(Config config, string fileName, string nameSpace, string tableName, string prefix, string suffix)
+        private static string GetClassName(GenNames names, CodeGenType type)
         {
-            string conStr = ConfigManager.DbFactory.CreateConnStr(ConfigManager.Config.DbServerName,
-                ConfigManager.Config.DbName, ConfigManager.Config.DbLoginName, ConfigManager.Config.DbLoginPwd);
-            List<ColumnNameEntity> list = null;
-            using (DbConnection conn = ConfigManager.DbFactory.GetConnection(conStr))
+            switch (type)
             {
-                DbCommand cmd = ConfigManager.DbFactory.GetCommand(conn,
-                    ConfigManager.SpecificSql.GetColumnNameSql(ConfigManager.Config.DbName, tableName));
-                list = DbHelper.GetList<ColumnNameEntity>(cmd);
+                case CodeGenType.Entity: return names.EntityClassName;
+                case CodeGenType.Interface: return names.InterfaceClassName;
+                case CodeGenType.DAL: return names.DALClassName;
+                case CodeGenType.BLL: return names.BLLClassName;
             }
-            if (null != list && list.Count > 0)
-            {
-                string filePath = Path.GetDirectoryName(fileName);
-                if (!Directory.Exists(filePath)) Directory.CreateDirectory(filePath);
-                using (FileStream fs = new FileStream(fileName, FileMode.Create))
-                {
-                    StreamWriter writer = new StreamWriter(fs, GetCodeEncoding(config));
-                    writer.WriteLine("using System;");
-                    writer.WriteLine("using System.Collections.Generic;");
-                    writer.WriteLine("using System.Linq;");
-                    writer.WriteLine("using System.Text;");
-                    writer.WriteLine("using Microsoft.Practices.EnterpriseLibrary.Data;");
-                    writer.WriteLine("using System.Data.Common;");
-                    writer.WriteLine("using System.Data;");
-                    //实体命名空间
-                    string entitySubNSP = config.EntitySubNamespace;
-                    if (entitySubNSP.Length > 0 && entitySubNSP.First() == '.') entitySubNSP = entitySubNSP.Substring(1);
-                    string enttiyNameSp = string.IsNullOrEmpty(entitySubNSP) ? config.Namespace : string.Format("{0}.{1}", config.Namespace, entitySubNSP);
-                    writer.WriteLine("using {0};", enttiyNameSp);
-                    //接口命名空间
-                    string interfSubNSP = config.InterfaceSubNamespace;
-                    if (!string.IsNullOrEmpty(interfSubNSP) && interfSubNSP != entitySubNSP)
-                    {
-                        if (interfSubNSP.Length > 0 && interfSubNSP.First() == '.') interfSubNSP = interfSubNSP.Substring(1);
-                        string interfNameSp = string.IsNullOrEmpty(interfSubNSP) ? config.Namespace : string.Format("{0}.{1}", config.Namespace, interfSubNSP);
-                        writer.WriteLine("using {0};", interfNameSp);
-                    }
-                    writer.WriteLine();
-
-                    writer.WriteLine("namespace {0}", nameSpace);
-                    writer.WriteLine("{");
-                    //start of class
-                    writer.WriteLine("\t/// <summary>");
-                    writer.WriteLine("{0}", AddFixPerLine((GetTableDescription(tableName, "其他") + "DAL实现"), "\t/// ", string.Empty));
-                    writer.WriteLine("\t/// </summary>");
-                    string className = GetObjectName(tableName, prefix, suffix);
-                    string interfaceName = GetObjectName(tableName, config.InterfacePrefix, config.InterfaceSuffix);
-                    writer.WriteLine("\tpublic class {0}", InheritInterface(className, interfaceName));
-                    writer.WriteLine("\t{");
-                    writer.WriteLine("\t\t#region DAL实现");
-                    writer.WriteLine();
-
-                    string entityClass = GetObjectName(tableName, config.EntityPrefix, config.EntitySuffix);
-                    string procedurePrefix = config.ProcedurePrefix;
-                    string procedurePrefix_ = string.IsNullOrEmpty(procedurePrefix) ? string.Empty : procedurePrefix + "_";
-                    string procedureSuffix = config.ProcedureSuffix;
-                    string procedureSuffix_ = string.IsNullOrEmpty(procedureSuffix) ? string.Empty : "_" + procedureSuffix;
-                    //Get
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 获取一个实体数据");
-                    writer.WriteLine("\t\t/// </summary>");
-                    List<ColumnNameEntity> primaryColumn = list.FindAll(e => e.IsPrimary);
-                    if (null != primaryColumn && primaryColumn.Count > 0)
-                    {
-                        string args = string.Empty;
-                        int count = primaryColumn.Count;
-                        int mcount = count - 1;
-                        for (int i = 0; i < count; i++)
-                        {
-                            var item = primaryColumn[i];
-                            writer.WriteLine("\t\t/// <param name=\"{0}\">{1}</param>", item.Name, item.Description);
-                            if (i < mcount)
-                                args += string.Format("{0} {1}, ", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                            else
-                                args += string.Format("{0} {1}", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                        }
-                        writer.WriteLine("\t\t/// <returns>返回实体，否则返回NULL</returns>");
-                        writer.WriteLine("\t\tpublic {0} Get({1})", entityClass, args);
-                        writer.WriteLine("\t\t{");
-                        writer.WriteLine("\t\t\tDatabase db = GetDB();");
-                        writer.WriteLine("\t\t\tDbCommand cmd = db.GetStoredProcCommand(\"{0}\");", string.Format("{0}{1}{2}_Get", procedurePrefix_, tableName, procedureSuffix_));
-                        for (int i = 0; i < count; i++)
-                        {
-                            var item = primaryColumn[i];
-                            writer.WriteLine("\t\t\tdb.AddInParameter(cmd, \"{0}\", DbType.{1}, {0});", item.Name, ConfigManager.DataTypeConvertor.ConvertToDbType(item));
-                        }
-                    }
-                    else
-                    {
-                        writer.WriteLine("\t\t/// <param name=\"{0}\">{1}</param>", "id", "ID");
-                        writer.WriteLine("\t\t/// <returns>返回实体，否则返回NULL</returns>");
-                        writer.WriteLine("\t\tpublic {0} Get({1})", entityClass, "int id");
-                        writer.WriteLine("\t\t{");
-                        writer.WriteLine("\t\t\tDatabase db = GetDB();");
-                        writer.WriteLine("\t\t\tDbCommand cmd = db.GetStoredProcCommand(\"{0}\");", string.Format("{0}{1}{2}_Get", procedurePrefix_, tableName, procedureSuffix_));
-                        writer.WriteLine("\t\t\tdb.AddInParameter(cmd, \"{0}\", DbType.{1}, {0});", "id", "Int32");
-                    }
-                    writer.WriteLine("\t\t\t{0} entity = null;", entityClass);
-                    writer.WriteLine("\t\t\tusing (IDataReader reader = db.ExecuteReader(cmd))");
-                    writer.WriteLine("\t\t\t{");
-                    writer.WriteLine("\t\t\t\tif (reader.Read())");
-                    writer.WriteLine("\t\t\t\t{");
-                    writer.WriteLine("\t\t\t\t\tentity = ConvertToEntity<{0}>(reader);", entityClass);
-                    writer.WriteLine("\t\t\t\t}");
-                    writer.WriteLine("\t\t\t}");
-                    writer.WriteLine("\t\t\treturn entity;");
-                    writer.WriteLine("\t\t}");
-                    writer.WriteLine();
-                    //Delete
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 删除一个实体数据");
-                    writer.WriteLine("\t\t/// </summary>");
-                    if (null != primaryColumn && primaryColumn.Count > 0)
-                    {
-                        string args = string.Empty;
-                        int count = primaryColumn.Count;
-                        int mcount = count - 1;
-                        for (int i = 0; i < count; i++)
-                        {
-                            var item = primaryColumn[i];
-                            writer.WriteLine("\t\t/// <param name=\"{0}\">{1}</param>", item.Name, item.Description);
-                            if (i < mcount)
-                                args += string.Format("{0} {1}, ", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                            else
-                                args += string.Format("{0} {1}", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                        }
-                        writer.WriteLine("\t\t/// <returns>0失败，1成功</returns>");
-                        writer.WriteLine("\t\tpublic int Delete({0})", args);
-                        writer.WriteLine("\t\t{");
-                        writer.WriteLine("\t\t\tDatabase db = GetDB();");
-                        writer.WriteLine("\t\t\tDbCommand cmd = db.GetStoredProcCommand(\"{0}\");", string.Format("{0}{1}{2}_Delete", procedurePrefix_, tableName, procedureSuffix_));
-                        for (int i = 0; i < count; i++)
-                        {
-                            var item = primaryColumn[i];
-                            writer.WriteLine("\t\t\tdb.AddInParameter(cmd, \"{0}\", DbType.{1}, {0});", item.Name, ConfigManager.DataTypeConvertor.ConvertToDbType(item));
-                        }
-                    }
-                    else
-                    {
-                        writer.WriteLine("\t\t/// <param name=\"{0}\">{1}</param>", "id", "ID");
-                        writer.WriteLine("\t\t/// <returns>0失败，1成功</returns>");
-                        writer.WriteLine("\t\tpublic int Delete({0})", "int id");
-                        writer.WriteLine("\t\t{");
-                        writer.WriteLine("\t\t\tDatabase db = GetDB();");
-                        writer.WriteLine("\t\t\tDbCommand cmd = db.GetStoredProcCommand(\"{0}\");", string.Format("{0}{1}{2}_Get", procedurePrefix_, tableName, procedureSuffix_));
-                        writer.WriteLine("\t\t\tdb.AddInParameter(cmd, \"{0}\", DbType.{1}, {0});", "id", "Int32");
-                    }
-                    writer.WriteLine("\t\t\tdb.AddOutParameter(cmd, \"{0}\", DbType.{1}, 32);", "ReturnValue", "Int32");
-                    writer.WriteLine("\t\t\tdb.ExecuteNonQuery(cmd);");
-                    writer.WriteLine("\t\t\treturn Convert.ToInt32(db.GetParameterValue(cmd, \"ReturnValue\"));");
-                    writer.WriteLine("\t\t}");
-                    writer.WriteLine();
-                    //Edit
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 编辑一个实体数据");
-                    writer.WriteLine("\t\t/// </summary>");
-                    writer.WriteLine("\t\t/// <param name=\"item\">实体</param>");
-                    writer.WriteLine("\t\t/// <returns>0失败，1成功</returns>");
-                    writer.WriteLine("\t\tpublic int Edit({0} item)", entityClass);
-                    writer.WriteLine("\t\t{");
-                    writer.WriteLine("\t\t\tDatabase db = GetDB();");
-                    writer.WriteLine("\t\t\tDbCommand cmd = db.GetStoredProcCommand(\"{0}\");", string.Format("{0}{1}{2}_Edit", procedurePrefix_, tableName, procedureSuffix_));
-                    List<ColumnNameEntity> editList = list.FindAll(e => e.IsIdentity == false || (e.IsIdentity && e.IsPrimary));
-                    if (null != editList && editList.Count > 0)
-                    {
-                        foreach (var item in editList)
-                        {
-                            writer.WriteLine("\t\t\tdb.AddInParameter(cmd, \"{0}\", DbType.{1}, item.{0});", item.Name, ConfigManager.DataTypeConvertor.ConvertToDbType(item));
-                        }
-                    }
-                    writer.WriteLine("\t\t\tdb.AddOutParameter(cmd, \"{0}\", DbType.{1}, 32);", "ReturnValue", "Int32");
-                    writer.WriteLine("\t\t\tdb.ExecuteNonQuery(cmd);");
-                    writer.WriteLine("\t\t\treturn Convert.ToInt32(db.GetParameterValue(cmd, \"ReturnValue\"));");
-                    writer.WriteLine("\t\t}");
-                    writer.WriteLine();
-                    //Add
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 增加一个实体数据，并更新实体的ID为新增ID");
-                    writer.WriteLine("\t\t/// </summary>");
-                    writer.WriteLine("\t\t/// <param name=\"item\">实体</param>");
-                    writer.WriteLine("\t\t/// <returns>0失败，1成功，2已存在</returns>");
-                    writer.WriteLine("\t\tpublic int Add(ref {0} item)", entityClass);
-                    writer.WriteLine("\t\t{");
-                    writer.WriteLine("\t\t\tDatabase db = GetDB();");
-                    writer.WriteLine("\t\t\tDbCommand cmd = db.GetStoredProcCommand(\"{0}\");", string.Format("{0}{1}{2}_Add", procedurePrefix_, tableName, procedureSuffix_));
-                    List<ColumnNameEntity> addList = list.FindAll(e => e.IsIdentity == false);
-                    if (null != addList && addList.Count > 0)
-                    {
-                        foreach (var item in addList)
-                        {
-                            writer.WriteLine("\t\t\tdb.AddInParameter(cmd, \"{0}\", DbType.{1}, item.{0});", item.Name, ConfigManager.DataTypeConvertor.ConvertToDbType(item));
-                        }
-                    }
-                    writer.WriteLine("\t\t\tdb.AddOutParameter(cmd, \"{0}\", DbType.{1}, 32);", "ReturnValue", "Int32");
-                    ColumnNameEntity identity = list.Find(e => e.IsIdentity);
-                    if (identity != null)
-                    {
-                        writer.WriteLine("\t\t\tdb.AddOutParameter(cmd, \"{0}\", DbType.{1}, 32);", "OutID", ConfigManager.DataTypeConvertor.ConvertToDbType(identity));
-                    }
-                    writer.WriteLine("\t\t\tdb.ExecuteNonQuery(cmd);");
-                    if (identity != null)
-                    {
-                        writer.WriteLine("\t\t\titem.{0} = Convert.To{1}(db.GetParameterValue(cmd, \"OutID\"));",
-                            identity.Name, ConfigManager.DataTypeConvertor.ConvertToDbType(identity));
-                    }
-                    writer.WriteLine("\t\t\treturn Convert.ToInt32(db.GetParameterValue(cmd, \"ReturnValue\"));");
-                    writer.WriteLine("\t\t}");
-                    writer.WriteLine();
-                    //GetList
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 获取数据列表");
-                    writer.WriteLine("\t\t/// </summary>");
-                    writer.WriteLine("\t\t/// <returns>返回非NULL列表</returns>");
-                    writer.WriteLine("\t\tpublic List<{0}> GetList()", entityClass);
-                    writer.WriteLine("\t\t{");
-                    writer.WriteLine("\t\t\tDatabase db = GetDB();");
-                    writer.WriteLine("\t\t\tDbCommand cmd = db.GetStoredProcCommand(\"{0}\");", string.Format("{0}{1}{2}_GetList", procedurePrefix_, tableName, procedureSuffix_));
-                    writer.WriteLine("\t\t\tList<{0}> list = new List<{0}>();", entityClass);
-                    writer.WriteLine("\t\t\tusing (IDataReader reader = db.ExecuteReader(cmd))");
-                    writer.WriteLine("\t\t\t{");
-                    writer.WriteLine("\t\t\t\twhile (reader.Read())");
-                    writer.WriteLine("\t\t\t\t{");
-                    writer.WriteLine("\t\t\t\t\tvar entity = ConvertToEntity<{0}>(reader);", entityClass);
-                    writer.WriteLine("\t\t\t\t\tif(null != entity) list.Add(entity);");
-                    writer.WriteLine("\t\t\t\t}");
-                    writer.WriteLine("\t\t\t}");
-                    writer.WriteLine("\t\t\treturn list;");
-                    writer.WriteLine("\t\t}");
-                    writer.WriteLine();
-
-                    writer.WriteLine("\t\t#endregion");
-                    writer.WriteLine("\t}");
-                    //end of class
-                    writer.WriteLine("}");
-                    writer.Close();
-                }
-            }
+            throw new Exception(string.Format("Not support this generator type {0}", type)); ;
         }
 
-        private void GenerateBLL(Config config, string fileName, string nameSpace, string tableName, string prefix, string suffix)
+        private static string GetFileExtentionName(CodeLanType lanType)
         {
-            string conStr = ConfigManager.DbFactory.CreateConnStr(ConfigManager.Config.DbServerName,
-                ConfigManager.Config.DbName, ConfigManager.Config.DbLoginName, ConfigManager.Config.DbLoginPwd);
-            List<ColumnNameEntity> list = null;
-            using (DbConnection conn = ConfigManager.DbFactory.GetConnection(conStr))
+            switch (lanType)
             {
-                DbCommand cmd = ConfigManager.DbFactory.GetCommand(conn,
-                    ConfigManager.SpecificSql.GetColumnNameSql(ConfigManager.Config.DbName, tableName));
-                list = DbHelper.GetList<ColumnNameEntity>(cmd);
+                case CodeLanType.CSharp: return "cs";
+                case CodeLanType.Java: return "java";
             }
-            if (null != list && list.Count > 0)
-            {
-                string filePath = Path.GetDirectoryName(fileName);
-                if (!Directory.Exists(filePath)) Directory.CreateDirectory(filePath);
-                using (FileStream fs = new FileStream(fileName, FileMode.Create))
-                {
-                    StreamWriter writer = new StreamWriter(fs, GetCodeEncoding(config));
-                    writer.WriteLine("using System;");
-                    writer.WriteLine("using System.Collections.Generic;");
-                    writer.WriteLine("using System.Linq;");
-                    writer.WriteLine("using System.Text;");
-                    //实体命名空间
-                    string entitySubNSP = config.EntitySubNamespace;
-                    if (entitySubNSP.Length > 0 && entitySubNSP.First() == '.') entitySubNSP = entitySubNSP.Substring(1);
-                    string enttiyNameSp = string.IsNullOrEmpty(entitySubNSP) ? config.Namespace : string.Format("{0}.{1}", config.Namespace, entitySubNSP);
-                    writer.WriteLine("using {0};", enttiyNameSp);
-                    //接口命名空间
-                    string interfSubNSP = config.InterfaceSubNamespace;
-                    if (!string.IsNullOrEmpty(interfSubNSP) && interfSubNSP != entitySubNSP)
-                    {
-                        if (interfSubNSP.Length > 0 && interfSubNSP.First() == '.') interfSubNSP = interfSubNSP.Substring(1);
-                        string interfNameSp = string.IsNullOrEmpty(interfSubNSP) ? config.Namespace : string.Format("{0}.{1}", config.Namespace, interfSubNSP);
-                        writer.WriteLine("using {0};", interfNameSp);
-                    }
-                    //DAL命名空间
-                    string dalSubNSP = config.DALSubNamespace;
-                    if (!string.IsNullOrEmpty(dalSubNSP) && dalSubNSP != entitySubNSP && dalSubNSP != interfSubNSP)
-                    {
-                        if (dalSubNSP.Length > 0 && dalSubNSP.First() == '.') dalSubNSP = dalSubNSP.Substring(1);
-                        string dalNameSp = string.IsNullOrEmpty(dalSubNSP) ? config.Namespace : string.Format("{0}.{1}", config.Namespace, dalSubNSP);
-                        writer.WriteLine("using {0};", dalNameSp);
-                    }
-                    writer.WriteLine();
-
-                    writer.WriteLine("namespace {0}", nameSpace);
-                    writer.WriteLine("{");
-                    //start of class
-                    writer.WriteLine("\t/// <summary>");
-                    writer.WriteLine("{0}", AddFixPerLine((GetTableDescription(tableName, "其他") + "BLL实现"), "\t/// ", string.Empty));
-                    writer.WriteLine("\t/// </summary>");
-                    string className = GetObjectName(tableName, prefix, suffix);
-                    writer.WriteLine("\tpublic class {0}", className);
-                    writer.WriteLine("\t{");
-                    writer.WriteLine("\t\t#region BLL实现");
-                    writer.WriteLine();
-
-                    string entityClass = GetObjectName(tableName, config.EntityPrefix, config.EntitySuffix);
-                    //属性
-                    string interfacePrefix = config.InterfacePrefix;
-                    string interfaceSuffix = config.InterfaceSuffix;
-                    string fileSuffix = interfaceSuffix.Contains(':') ? interfaceSuffix.Substring(0, interfaceSuffix.IndexOf(':')).Trim() : interfaceSuffix;
-                    string clearInterfaceName = GetObjectName(tableName, interfacePrefix, fileSuffix);
-                    string dalPrefix = config.DALPrefix;
-                    string dalSuffix = config.DALSuffix;
-                    string dalFileSuffix = dalSuffix.Contains(':') ? dalSuffix.Substring(0, dalSuffix.IndexOf(':')).Trim() : dalSuffix;
-                    string clearDALName = GetObjectName(tableName, dalPrefix, dalFileSuffix);
-                    writer.WriteLine("\t\tprivate {0} m_DAL = null;", clearInterfaceName);
-                    writer.WriteLine();
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 数据访问层");
-                    writer.WriteLine("\t\t/// </summary>");
-                    writer.WriteLine("\t\tpublic {0} DAL", clearInterfaceName);
-                    writer.WriteLine("\t\t{");
-                    writer.WriteLine("\t\t\tget");
-                    writer.WriteLine("\t\t\t{");
-                    writer.WriteLine("\t\t\t\tif(null == m_DAL)");
-                    writer.WriteLine("\t\t\t\t{");
-                    writer.WriteLine("\t\t\t\t\tm_DAL = new {0}();", clearDALName);
-                    writer.WriteLine("\t\t\t\t}");
-                    writer.WriteLine("\t\t\t\treturn m_DAL;");
-                    writer.WriteLine("\t\t\t}");
-                    writer.WriteLine("\t\t}");
-                    writer.WriteLine();
-                    //Get
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 获取一个实体数据");
-                    writer.WriteLine("\t\t/// </summary>");
-                    List<ColumnNameEntity> primaryColumn = list.FindAll(e => e.IsPrimary == true);
-                    if (null != primaryColumn && primaryColumn.Count > 0)
-                    {
-                        string args = string.Empty;
-                        string realArgs = string.Empty;
-                        int count = primaryColumn.Count;
-                        int mcount = count - 1;
-                        for (int i = 0; i < count; i++)
-                        {
-                            var item = primaryColumn[i];
-                            writer.WriteLine("\t\t/// <param name=\"{0}\">{1}</param>", item.Name, item.Description);
-                            if (i < mcount)
-                            {
-                                args += string.Format("{0} {1}, ", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                                realArgs += string.Format("{0}, ", item.Name);
-                            }
-                            else
-                            {
-                                args += string.Format("{0} {1}", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                                realArgs += string.Format("{0}", item.Name);
-                            }
-                        }
-                        writer.WriteLine("\t\t/// <returns>返回实体，否则返回NULL</returns>");
-                        writer.WriteLine("\t\tpublic {0} Get({1})", entityClass, args);
-                        writer.WriteLine("\t\t{");
-                        writer.WriteLine("\t\t\treturn this.DAL.Get({0});", realArgs);
-                    }
-                    else
-                    {
-                        writer.WriteLine("\t\t/// <param name=\"{0}\">{1}</param>", "id", "ID");
-                        writer.WriteLine("\t\t/// <returns>返回实体，否则返回NULL</returns>");
-                        writer.WriteLine("\t\tpublic {0} Get({1})", entityClass, "int id");
-                        writer.WriteLine("\t\t{");
-                        writer.WriteLine("\t\t\treturn this.DAL.Get({0});", "id");
-                    }
-                    writer.WriteLine("\t\t}");
-                    writer.WriteLine();
-                    //Delete
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 删除一个实体数据");
-                    writer.WriteLine("\t\t/// </summary>");
-                    if (null != primaryColumn && primaryColumn.Count > 0)
-                    {
-                        string args = string.Empty;
-                        string realArgs = string.Empty;
-                        int count = primaryColumn.Count;
-                        int mcount = count - 1;
-                        for (int i = 0; i < count; i++)
-                        {
-                            var item = primaryColumn[i];
-                            writer.WriteLine("\t\t/// <param name=\"{0}\">{1}</param>", item.Name, item.Description);
-                            if (i < mcount)
-                            {
-                                args += string.Format("{0} {1}, ", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                                realArgs += string.Format("{0}, ", item.Name);
-                            }
-                            else
-                            {
-                                args += string.Format("{0} {1}", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                                realArgs += string.Format("{0}", item.Name);
-                            }
-                        }
-                        writer.WriteLine("\t\t/// <returns>0失败，1成功</returns>");
-                        writer.WriteLine("\t\tpublic int Delete({0})", args);
-                        writer.WriteLine("\t\t{");
-                        writer.WriteLine("\t\t\treturn this.DAL.Delete({0});", realArgs);
-                    }
-                    else
-                    {
-                        writer.WriteLine("\t\t/// <param name=\"{0}\">{1}</param>", "id", "ID");
-                        writer.WriteLine("\t\t/// <returns>0失败，1成功</returns>");
-                        writer.WriteLine("\t\tpublic int Delete({0})", "int id");
-                        writer.WriteLine("\t\t{");
-                        writer.WriteLine("\t\t\treturn this.DAL.Delete({0});", "id");
-                    }
-                    writer.WriteLine("\t\t}");
-                    writer.WriteLine();
-                    //Edit
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 编辑一个实体数据");
-                    writer.WriteLine("\t\t/// </summary>");
-                    writer.WriteLine("\t\t/// <param name=\"item\">实体</param>");
-                    writer.WriteLine("\t\t/// <returns>0失败，1成功</returns>");
-                    writer.WriteLine("\t\tpublic int Edit({0} item)", entityClass);
-                    writer.WriteLine("\t\t{");
-                    writer.WriteLine("\t\t\treturn this.DAL.Edit(item);");
-                    writer.WriteLine("\t\t}");
-                    writer.WriteLine();
-                    //Add
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 增加一个实体数据，并更新实体的ID为新增ID");
-                    writer.WriteLine("\t\t/// </summary>");
-                    writer.WriteLine("\t\t/// <param name=\"item\">实体</param>");
-                    writer.WriteLine("\t\t/// <returns>0失败，1成功，2已存在</returns>");
-                    writer.WriteLine("\t\tpublic int Add(ref {0} item)", entityClass);
-                    writer.WriteLine("\t\t{");
-                    writer.WriteLine("\t\t\treturn this.DAL.Add(ref item);");
-                    writer.WriteLine("\t\t}");
-                    writer.WriteLine();
-                    //GetList
-                    writer.WriteLine("\t\t/// <summary>");
-                    writer.WriteLine("\t\t/// 获取数据列表");
-                    writer.WriteLine("\t\t/// </summary>");
-                    writer.WriteLine("\t\t/// <returns>返回非NULL列表</returns>");
-                    writer.WriteLine("\t\tpublic List<{0}> GetList()", entityClass);
-                    writer.WriteLine("\t\t{");
-                    writer.WriteLine("\t\t\treturn this.DAL.GetList();");
-                    writer.WriteLine("\t\t}");
-                    writer.WriteLine();
-
-                    writer.WriteLine("\t\t#endregion");
-                    writer.WriteLine("\t}");
-                    //end of class
-                    writer.WriteLine("}");
-                    writer.Close();
-                }
-            }
+            throw new Exception(string.Format("Not support this language type {0}", lanType));
         }
 
-        private void GenerateProcedure(Config config, StreamWriter writer, string tableName, string prefix, string suffix)
+        private static void CreateDirIfNotExist(string fileName)
         {
-            if (!string.IsNullOrEmpty(tableName))
-            {
-                //table columns
-                string conStr = ConfigManager.DbFactory.CreateConnStr(ConfigManager.Config.DbServerName,
-                ConfigManager.Config.DbName, ConfigManager.Config.DbLoginName, ConfigManager.Config.DbLoginPwd);
-                List<ColumnNameEntity> list = null;
-                using (DbConnection conn = ConfigManager.DbFactory.GetConnection(conStr))
-                {
-                    DbCommand cmd = ConfigManager.DbFactory.GetCommand(conn,
-                        ConfigManager.SpecificSql.GetColumnNameSql(ConfigManager.Config.DbName, tableName));
-                    list = DbHelper.GetList<ColumnNameEntity>(cmd);
-                }
-                if (null != list && list.Count > 0)
-                {
-                    string procedure = tableName;
-                    if (!string.IsNullOrEmpty(prefix)) procedure = prefix + "_" + procedure;
-                    if (!string.IsNullOrEmpty(suffix)) procedure = procedure + "_" + suffix;
-                    SqlCreatorBase creator = SqlCreatorFactory.GetSqlCreator(config.DbType);
-                    //drop
-                    creator.DropProcesure(writer, config.DbName, procedure + "_Get");
-                    writer.WriteLine();
-                    creator.DropProcesure(writer, config.DbName, procedure + "_Add");
-                    writer.WriteLine();
-                    creator.DropProcesure(writer, config.DbName, procedure + "_Edit");
-                    writer.WriteLine();
-                    creator.DropProcesure(writer, config.DbName, procedure + "_Delete");
-                    writer.WriteLine();
-                    creator.DropProcesure(writer, config.DbName, procedure + "_GetList");
-                    writer.WriteLine();
-                    //create
-                    creator.CreateGetProcedure(writer, list, config.DbName, tableName, procedure + "_Get");
-                    writer.WriteLine();
-                    creator.CreateAddProcedure(writer, list, config.DbName, tableName, procedure + "_Add");
-                    writer.WriteLine();
-                    creator.CreateEditProcedure(writer, list, config.DbName, tableName, procedure + "_Edit");
-                    writer.WriteLine();
-                    creator.CreateDeleteProcedure(writer, list, config.DbName, tableName, procedure + "_Delete");
-                    writer.WriteLine();
-                    creator.CreateGetListProcedure(writer, list, config.DbName, tableName, procedure + "_GetList");
-                    writer.WriteLine();
-                }
-            }
+            string filePath = Path.GetDirectoryName(fileName);
+            if (!Directory.Exists(filePath)) Directory.CreateDirectory(filePath);
         }
 
         #endregion 辅助函数
@@ -1667,7 +1159,23 @@ namespace AutoCode
 
         #endregion 修改配置
 
-        #region 首字母大小写
+        #region 字母大小写
+
+        private string FirstLetterCase(string str)
+        {
+            if (rbtnFirstLetterCaseLower.Checked)
+            {
+                return Tools.FirstLetterToLower(str);
+            }
+            else if (rbtnFirstLetterCaseUpper.Checked)
+            {
+                return Tools.FirstLetterToUpper(str);
+            }
+            else
+            {
+                return str;
+            }
+        }
 
         private void rbtnFirstLetterCaseIgnore_CheckedChanged(object sender, EventArgs e)
         {
@@ -1694,6 +1202,6 @@ namespace AutoCode
             }
         }
 
-        #endregion 首字母大小写
+        #endregion 字母大小写
     }
 }

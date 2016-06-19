@@ -48,7 +48,7 @@ namespace AutoCode
             }
         }
 
-        public static SqlCreatorBase GetSqlCreator(DatabaseType dbtype)
+        public static ISqlCreator GetSqlCreator(DatabaseType dbtype)
         {
             switch (dbtype)
             {

@@ -7,16 +7,18 @@ using AutoCode.Entity;
 
 namespace AutoCode.SqlCreator
 {
-    public class MySqlCreator : SqlCreatorBase
+    public class MySqlCreator : ISqlCreator, ISqlBatchCreator
     {
-        public override void DropProcesure(StreamWriter writer, string dbName, string procedureName)
+        #region common
+
+        public void DropProcesure(StreamWriter writer, string dbName, string procedureName)
         {
             writer.WriteLine("/*删除存储过程 {0}*/", procedureName);
             writer.WriteLine("USE `{0}`;", dbName);
             writer.WriteLine("DROP procedure IF EXISTS `{0}`;", procedureName);
         }
 
-        public override void CreateGetProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        public void CreateGetProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
         {
             writer.WriteLine("/*创建存储过程 {0}*/", procedureName);
             writer.WriteLine("DELIMITER $$");
@@ -63,7 +65,7 @@ namespace AutoCode.SqlCreator
             writer.WriteLine("DELIMITER ;");
         }
 
-        public override void CreateAddProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        public void CreateAddProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
         {
             List<ColumnNameEntity> addList = columns.FindAll(e => e.IsIdentity == false);
             ColumnNameEntity identity = columns.Find(e => e.IsIdentity);
@@ -163,7 +165,7 @@ namespace AutoCode.SqlCreator
             }
         }
 
-        public override void CreateEditProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        public void CreateEditProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
         {
             List<ColumnNameEntity> editList = columns.FindAll(e => e.IsIdentity == false || (e.IsIdentity && e.IsPrimary));
             if (null != editList && editList.Count > 0)
@@ -227,7 +229,7 @@ namespace AutoCode.SqlCreator
             }
         }
 
-        public override void CreateDeleteProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        public void CreateDeleteProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
         {
             writer.WriteLine("/*创建存储过程 {0}*/", procedureName);
             writer.WriteLine("DELIMITER $$");
@@ -281,7 +283,7 @@ namespace AutoCode.SqlCreator
             writer.WriteLine("DELIMITER ;");
         }
 
-        public override void CreateGetListProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        public void CreateGetListProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
         {
             writer.WriteLine("/*创建存储过程 {0}*/", procedureName);
             writer.WriteLine("DELIMITER $$");
@@ -297,5 +299,26 @@ namespace AutoCode.SqlCreator
             writer.WriteLine("$$");
             writer.WriteLine("DELIMITER ;");
         }
+
+        #endregion common
+
+        #region batch
+
+        public void CreateBatchAddProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void CreateBatchEditProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void CreateBatchDeleteProcedure(StreamWriter writer, List<ColumnNameEntity> columns, string dbName, string tableName, string procedureName)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion batch
     }
 }

@@ -8,34 +8,31 @@ using AutoCode.Entity;
 
 namespace AutoCode.CodeCreator.CSharp
 {
-    public class EntityCreator : CSharpCreatorBase
+    public class EntityCreator : CreatorBase
     {
         public EntityCreator(TextWriter writer, GenNames names, Config config, TableNameEntity table)
-            : base(writer, config, names, table,
+            : base(config, writer, names, table,
             GetTableColumns(ConfigManager.DbFactory, ConfigManager.SpecificSql, ConfigManager.Config, names.TableName))
         { }
 
         public override void Generate()
         {
-            WriterReference();
-            CreateDirectory(Names.FileName);
+            WriteReference();
             Writer.WriteLine();
-            Writer.WriteLine("namespace {0}", Names.NameSpace);
+            WriteNameSpace();
             Writer.WriteLine("{");
             //start of class
-            Writer.WriteLine("\t/// <summary>");
-            Writer.WriteLine("{0}", AddFixPerLine(GetTableDescription(Table), "\t/// ", string.Empty));
-            Writer.WriteLine("\t/// </summary>");
+            WriteClassComment(1, "/// ", "实体");
             Writer.WriteLine("\tpublic class {0}", GetObjectName(Names.TableName, Names.Prefix, Names.Suffix));
             Writer.WriteLine("\t{");
             Writer.WriteLine("\t\t#region 公共属性");
             Writer.WriteLine();
             foreach (ColumnNameEntity item in Columns)
             {
-                string attr = string.Format("\t\tpublic {0} {1} ", ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name);
-                Writer.WriteLine("\t\t/// <summary>");
-                Writer.WriteLine("\t\t/// {0}", item.Description);
-                Writer.WriteLine("\t\t/// </summary>");
+                string attr = FirstLetter(string.Format("\t\tpublic {0} {1} ",
+                    ConfigManager.DataTypeConvertor.ConvertToDataType(item), item.Name));
+
+                WriteComment(item.Description, 2, "/// ");
                 Writer.WriteLine(attr + "{ get; set; }");
                 Writer.WriteLine();
             }
